@@ -1,0 +1,60 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    rule: nodes
+  name: node-rules
+  namespace: monitoring
+spec:
+  groups:
+  - name: node
+    rules:
+    - alert: KubernetesNodeReady
+      expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Kubernetes Node not ready (instance {{ $labels.instance }}).
+        description: 'Node {{ $labels.node }} has been unready for 5mins.'
+    - alert: KubernetesMemoryPressure
+      expr: kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Kubernetes memory pressure.
+        description: '{{ $labels.node }} has MemoryPressure condition\n  VALUE = {{ $value }}\n  LABELS {{ $labels }}.'
+    - alert: KubernetesDiskPressure
+      expr: kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Kubernetes Node disk pressure.
+        description: '{{ $labels.node }} has DiskPressure condition\n  VALUE = {{ $value }}\n  LABELS {{ $labels }}'
+    - alert: KubernetesOutOfDisk
+      expr: kube_node_status_condition{condition="OutOfDisk",status="true"} == 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Kubernetes node out of disk
+        description: '{{ $labels.node }} has OutOfDisk condition'
+    - alert: KubernetesOutOfCapacity
+      expr: sum(kube_pod_info) by (node) / sum(kube_node_status_allocatable_pods) by (node) * 100 > 90
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: Kubernetes node out of capacity.
+        description: 'Node {{ $labels.node }} is out of pod capacity'
+    - alert: KubeNodeReadinessFlapping
+      annotations:
+        description: The readiness status of node {{ $labels.node }} has changed {{ $value }} times in the last 15 minutes.
+        runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodereadinessflapping
+        summary: Node readiness status is flapping.
+      expr: sum(changes(kube_node_status_condition{status="true",condition="Ready"}[15m])) by (node) > 2
+      for: 15m
+      labels:
+        severity: warning
