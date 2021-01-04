@@ -1,4 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- bundle.yaml
+- recording_rules/k8s_container_recording_rules.yaml
+- recording_rules/k8s_node_recording_rules.yaml
+- recording_rules/node_exporter_rules.yaml
+- alert_rules/k8s_apps.yaml
+- alert_rules/k8s_storage.yaml
+- alert_rules/node_network.yaml
+- alert_rules/nodes.yaml
+- alert_rules/prometheus_operator.yaml
